@@ -75,6 +75,12 @@
         align-items: center;
       }
 
+      .controllers .index {
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 32px;
+      }
+
       .controllers button {
         padding: 0.75rem 1.5rem;
         border-radius: 6px;
@@ -84,6 +90,10 @@
         background-color: teal;
         color: #fff;
         font-size: 16px;
+      }
+
+      .controllers button:disabled {
+        background-color: #999999;
       }
 
       @media only screen and (max-width: 768px) {
@@ -96,16 +106,14 @@
   <body>
     <div class="container">
       <div class="controllers">
-        <button class="prev">Prev</button>
+        <span class="index">0</span>
         <button class="next">Next</button>
       </div>
 
       <div class="card">
         <div class="card-body">
-          <span class="id">Loading ...</span>
           <p class="review">Loading ...</p>
         </div>
-        <span class="interface">Loading ...</span>
       </div>
     </div>
 
@@ -113,19 +121,15 @@
       const URL =
         "https://telling-gossamer-homegrown.glitch.me/id_review_condition.csv";
 
-      let CURRENT_ID = 0;
       let DATA_LENGTH = 0;
+      let DRAWN_INDEXES = [];
 
-      const ids = [];
       const reviews = [];
-      const interfaces = [];
 
-      const id_element = document.querySelector(".id");
       const review_element = document.querySelector(".review");
-      const interface_element = document.querySelector(".interface");
 
-      const prev_btn = document.querySelector(".prev");
       const next_btn = document.querySelector(".next");
+      const number_of_reviews = document.querySelector(".index");
 
       fetch(URL)
         .then((res) => res.text())
@@ -136,55 +140,53 @@
             const row = rows[i].split(";");
 
             if (i > 0) {
-              ids.push(row[0]);
               reviews.push(row[1]);
-              interfaces.push(row[2]);
 
               DATA_LENGTH++;
             }
           }
 
-          return { ids, reviews, interfaces };
+          return { reviews };
         })
-        .then(({ ids, reviews, interfaces }) => {
-          id_element.innerHTML = ids[CURRENT_ID];
-          review_element.innerHTML = reviews[CURRENT_ID];
-          interface_element.innerHTML = interfaces[CURRENT_ID];
+        .then(({ reviews }) => {
+          updateUI(generateRandomNumber());
         });
 
-      const updateUI = () => {
-        id_element.innerHTML = ids[CURRENT_ID]
-          ? ids[CURRENT_ID]
-          : "No available data";
-        review_element.innerHTML = reviews[CURRENT_ID]
-          ? reviews[CURRENT_ID]
-          : "No available data";
-        interface_element.innerHTML = interfaces[CURRENT_ID]
-          ? interfaces[CURRENT_ID]
-          : "No available data";
+      const generateRandomNumber = (maxLimit = DATA_LENGTH - 1) => {
+        let rand = Math.random() * maxLimit;
+
+        rand = Math.floor(rand);
+
+        if (DRAWN_INDEXES.length === 0) {
+          DRAWN_INDEXES.push(rand);
+          return rand;
+        } else {
+          if (DRAWN_INDEXES.includes(rand)) {
+            generateRandomNumber();
+          } else {
+            DRAWN_INDEXES = [...DRAWN_INDEXES, rand];
+            return rand;
+          }
+        }
       };
 
-      const handlePrevBtnClick = () => {
-        if (CURRENT_ID === 0) {
-          CURRENT_ID = DATA_LENGTH - 1;
-          updateUI();
+      const updateUI = (id) => {
+        if (DRAWN_INDEXES.length - 1 === 10) {
+          next_btn.disabled = true;
+          number_of_reviews.innerHTML = DRAWN_INDEXES.length - 1;
         } else {
-          CURRENT_ID--;
-          updateUI();
+          review_element.innerHTML = reviews[id]
+            ? reviews[id]
+            : "No available data";
+
+          number_of_reviews.innerHTML = DRAWN_INDEXES.length - 1;
         }
       };
 
       const handleNextBtnClick = () => {
-        if (CURRENT_ID < DATA_LENGTH - 1) {
-          CURRENT_ID++;
-          updateUI();
-        } else {
-          CURRENT_ID = 0;
-          updateUI();
-        }
+        updateUI(generateRandomNumber());
       };
 
-      prev_btn.addEventListener("click", handlePrevBtnClick);
       next_btn.addEventListener("click", handleNextBtnClick);
     </script>
   </body>
